@@ -58,6 +58,8 @@ void close()
 
 int main(int argc, char* args[])
 {
+    bool quit=false;
+    SDL_Event e;
     if(!init())
     {
         printf("Failed to initialise\n");
@@ -67,10 +69,15 @@ int main(int argc, char* args[])
         printf("Could not load media\n");
     }
     else
+    while(!quit)
     {
+        while(SDL_PollEvent(&e)!=0)
+        {
+            if(e.type==SDL_QUIT)
+                quit=true;
+        }
         SDL_BlitSurface(gImage,NULL,gScreenSurface,NULL);
         SDL_UpdateWindowSurface(gWindow);
-        SDL_Delay(2000);
     }
     close();
 	return 0;
