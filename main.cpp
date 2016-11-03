@@ -1,4 +1,5 @@
 #include <SDL.h>
+#include <SDL_image.h>
 #include <stdio.h>
 #include <string>
 #include <conio.h>
@@ -27,7 +28,7 @@ SDL_Surface* gCurrentSurface=NULL;
 SDL_Surface* loadSurface(std::string path)
 {
     SDL_Surface* optimizedSurface=NULL;
-    SDL_Surface* loadedSurface=SDL_LoadBMP(path.c_str());
+    SDL_Surface* loadedSurface=IMG_Load(path.c_str());
     if(loadedSurface==NULL)
     {
         printf("Failed to load image %s. SDL_Error: %S\n",path.c_str(),SDL_GetError());
@@ -47,7 +48,7 @@ SDL_Surface* loadSurface(std::string path)
 bool loadMedia()
 {
     bool success=true;
-    gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT]=loadSurface("default.bmp");
+    gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT]=loadSurface("default.png");
     if(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT]==NULL)
     {
         printf("Failed to load default image\n");
@@ -59,7 +60,7 @@ bool loadMedia()
         printf("Failed to load up image\n");
         success=false;
     }
-    gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN]=loadSurface("down.bmp");
+    gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN]=loadSurface("down.jpg");
     if(gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN]==NULL)
     {
         printf("Failed to load down image\n");
@@ -99,7 +100,16 @@ bool init()
 		}
 		else
 		{
-			gScreenSurface=SDL_GetWindowSurface(gWindow);
+            int imgFlags=IMG_INIT_PNG;
+            if(!(IMG_Init(imgFlags)&imgFlags))
+            {
+                printf("IMG could not initialise. IMG_Error: %s\n",IMG_GetError());
+                success=false;
+            }
+            else
+            {
+			    gScreenSurface=SDL_GetWindowSurface(gWindow);
+            }
 		}
 	}
 	return success;
@@ -163,6 +173,9 @@ int main(int argc, char* args[])
                             break;
                             case SDLK_RIGHT:
                             gCurrentSurface=gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT];
+                            break;
+                            case SDLK_ESCAPE:
+                            quit=true;
                             break;
                             default:
                             gCurrentSurface=gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
