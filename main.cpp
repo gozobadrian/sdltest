@@ -3,8 +3,8 @@
 #include <string>
 #include <conio.h>
 
-const int SCREEN_WIDTH=640;
-const int SCREEN_HEIGHT=480;
+const int SCREEN_WIDTH=320;
+const int SCREEN_HEIGHT=240;
 
 enum keyPressSurfaces
 {
@@ -26,12 +26,22 @@ SDL_Surface* gCurrentSurface=NULL;
 
 SDL_Surface* loadSurface(std::string path)
 {
+    SDL_Surface* optimizedSurface=NULL;
     SDL_Surface* loadedSurface=SDL_LoadBMP(path.c_str());
     if(loadedSurface==NULL)
     {
         printf("Failed to load image %s. SDL_Error: %S\n",path.c_str(),SDL_GetError());
     }
-    return loadedSurface;
+    else
+    {
+        optimizedSurface=SDL_ConvertSurface(loadedSurface,gScreenSurface->format,NULL);
+        if(optimizedSurface==NULL)
+        {
+            printf("Could not optimize surface! SDL_Error: %s\n", SDL_GetError());
+        }
+        SDL_FreeSurface(loadedSurface);
+    }
+    return optimizedSurface;
 }
 
 bool loadMedia()
@@ -107,6 +117,16 @@ void close()
     SDL_Quit();
 }
 
+void blitImage(SDL_Surface* gStretchedSurface, SDL_Surface* gScreenSurface)
+{
+    SDL_Rect stretchRect;
+    stretchRect.x=0;
+    stretchRect.y=0;
+    stretchRect.w=SCREEN_WIDTH;
+    stretchRect.h=SCREEN_HEIGHT;
+    SDL_BlitScaled(gStretchedSurface, NULL, gScreenSurface, &stretchRect);
+}
+
 int main(int argc, char* args[])
 {
     if(!init())
@@ -150,7 +170,8 @@ int main(int argc, char* args[])
                         }
                     }
                 }
-                SDL_BlitSurface(gCurrentSurface,NULL,gScreenSurface,NULL);
+                blitImage(gCurrentSurface,gScreenSurface);
+                ///SDL_BlitSurface(gCurrentSurface,NULL,gScreenSurface,NULL);
                 SDL_UpdateWindowSurface(gWindow);
             }
         }
