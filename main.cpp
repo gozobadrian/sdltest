@@ -7,134 +7,85 @@
 const int SCREEN_WIDTH=320;
 const int SCREEN_HEIGHT=240;
 
-enum keyPressSurfaces
-{
-    KEY_PRESS_SURFACE_DEFAULT,
-    KEY_PRESS_SURFACE_UP,
-    KEY_PRESS_SURFACE_DOWN,
-    KEY_PRESS_SURFACE_LEFT,
-    KEY_PRESS_SURFACE_RIGHT,
-    KEY_PRESS_SURFACE_TOTAL
-};
-
 SDL_Window* gWindow=NULL;
 
-SDL_Surface* gScreenSurface=NULL;
+SDL_Renderer* gRender=NULL;
 
-SDL_Surface* gKeyPressSurfaces[KEY_PRESS_SURFACE_TOTAL];
+SDL_Texture* gTexture=NULL;
 
-SDL_Surface* gCurrentSurface=NULL;
-
-SDL_Surface* loadSurface(std::string path)
+bool init()
 {
-    SDL_Surface* optimizedSurface=NULL;
-    SDL_Surface* loadedSurface=IMG_Load(path.c_str());
-    if(loadedSurface==NULL)
+    bool success=true;
+    gWindow=SDL_CreateWindow("SDL Tutorial",SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,SCREEN_WIDTH,SCREEN_HEIGHT,SDL_WINDOW_SHOWN);
+    if(!gWindow)
     {
-        printf("Failed to load image %s. SDL_Error: %S\n",path.c_str(),SDL_GetError());
+        printf("Failed to initialize window! SDL_Error: %s\n", SDL_GetError());
+        success=false;
     }
     else
     {
-        optimizedSurface=SDL_ConvertSurface(loadedSurface,gScreenSurface->format,NULL);
-        if(optimizedSurface==NULL)
+        gRender=SDL_CreateRenderer(gWindow,-1,SDL_RENDERER_ACCELERATED);
+        if(!gRender)
         {
-            printf("Could not optimize surface! SDL_Error: %s\n", SDL_GetError());
+            printf("Failed to create render! SDL_Error: %s\n", SDL_GetError());
+            success=false;
         }
-        SDL_FreeSurface(loadedSurface);
+        else
+        {
+            SDL_SetRenderDrawColor(gRender,0xFF,0xFF,0xFF,0xFF);
+            int imgFlags=IMG_INIT_PNG;
+            if(!(IMG_Init(imgFlags)&imgFlags))
+            {
+                printf("SDL_Image could not initialize! SDL_Error: %s\n",SDL_GetError());
+                success=false;
+            }
+        }
     }
-    return optimizedSurface;
+    return success;
+}
+
+SDL_Texture* loadTexture(std::string path)
+{
+    SDL_Texture* newTexture=NULL;
+    SDL_Surface* loadedImage=IMG_Load(path.c_str());
+    if(!loadedImage)
+    {
+        printf("Failed to load image %s! SDL_Error: %s\n", path.c_str(), SDL_GetError());
+    }
+    else
+    {
+        newTexture=SDL_CreateTextureFromSurface(gRender,loadedImage);
+        if(!newTexture)
+        {
+            printf("Failed to create teture from %s! SDL_Error: %s\n", path.c_str(), SDL_GetError());
+        }
+        SDL_FreeSurface(loadedImage);
+    }
+    return newTexture;
 }
 
 bool loadMedia()
 {
     bool success=true;
-    gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT]=loadSurface("default.png");
-    if(gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT]==NULL)
+    gTexture=loadTexture("texture.png");
+    if(!gTexture)
     {
-        printf("Failed to load default image\n");
-        success=false;
-    }
-    gKeyPressSurfaces[KEY_PRESS_SURFACE_UP]=loadSurface("up.bmp");
-    if(gKeyPressSurfaces[KEY_PRESS_SURFACE_UP]==NULL)
-    {
-        printf("Failed to load up image\n");
-        success=false;
-    }
-    gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN]=loadSurface("down.jpg");
-    if(gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN]==NULL)
-    {
-        printf("Failed to load down image\n");
-        success=false;
-    }
-    gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT]=loadSurface("left.bmp");
-    if(gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT]==NULL)
-    {
-        printf("Failed to load left image\n");
-        success=false;
-    }
-    gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT]=loadSurface("right.bmp");
-    if(gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT]==NULL)
-    {
-        printf("Failed to load right image\n");
+        printf("Failed to load texture image!\n");
         success=false;
     }
     return success;
 }
 
-bool init()
-{
-    bool success=true;
-
-	if(SDL_Init(SDL_INIT_VIDEO)<0)
-	{
-		printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
-		success=false;
-	}
-	else
-	{
-        gWindow = SDL_CreateWindow( "SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
-		if(gWindow == NULL)
-		{
-			printf("Window could not be created! SDL_Error: %s\n",SDL_GetError());
-			success=false;
-		}
-		else
-		{
-            int imgFlags=IMG_INIT_PNG;
-            if(!(IMG_Init(imgFlags)&imgFlags))
-            {
-                printf("IMG could not initialise. IMG_Error: %s\n",IMG_GetError());
-                success=false;
-            }
-            else
-            {
-			    gScreenSurface=SDL_GetWindowSurface(gWindow);
-            }
-		}
-	}
-	return success;
-}
-
 void close()
 {
-    for(int i=0;i<KEY_PRESS_SURFACE_TOTAL;i++)
-    {
-        SDL_FreeSurface(gKeyPressSurfaces[i]);
-        gKeyPressSurfaces[i]=NULL;
-    }
+    SDL_DestroyTexture(gTexture);
+    gTexture=NULL;
+    SDL_DestroyRenderer(gRender);
+    gRender=NULL;
     SDL_DestroyWindow(gWindow);
     gWindow=NULL;
+    IMG_Quit();
     SDL_Quit();
-}
-
-void blitImage(SDL_Surface* gStretchedSurface, SDL_Surface* gScreenSurface)
-{
-    SDL_Rect stretchRect;
-    stretchRect.x=0;
-    stretchRect.y=0;
-    stretchRect.w=SCREEN_WIDTH;
-    stretchRect.h=SCREEN_HEIGHT;
-    SDL_BlitScaled(gStretchedSurface, NULL, gScreenSurface, &stretchRect);
 }
 
 int main(int argc, char* args[])
@@ -151,41 +102,16 @@ int main(int argc, char* args[])
         {
             bool quit=false;
             SDL_Event e;
-            gCurrentSurface=gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
             while(!quit)
             {
                 while(SDL_PollEvent(&e)!=0)
                 {
                     if(e.type==SDL_QUIT)
                         quit=true;
-                    else if(e.type==SDL_KEYDOWN)
-                    {
-                        switch(e.key.keysym.sym)
-                        {
-                            case SDLK_UP:
-                            gCurrentSurface=gKeyPressSurfaces[KEY_PRESS_SURFACE_UP];
-                            break;
-                            case SDLK_DOWN:
-                            gCurrentSurface=gKeyPressSurfaces[KEY_PRESS_SURFACE_DOWN];
-                            break;
-                            case SDLK_LEFT:
-                            gCurrentSurface=gKeyPressSurfaces[KEY_PRESS_SURFACE_LEFT];
-                            break;
-                            case SDLK_RIGHT:
-                            gCurrentSurface=gKeyPressSurfaces[KEY_PRESS_SURFACE_RIGHT];
-                            break;
-                            case SDLK_ESCAPE:
-                            quit=true;
-                            break;
-                            default:
-                            gCurrentSurface=gKeyPressSurfaces[KEY_PRESS_SURFACE_DEFAULT];
-                            break;
-                        }
-                    }
                 }
-                blitImage(gCurrentSurface,gScreenSurface);
-                ///SDL_BlitSurface(gCurrentSurface,NULL,gScreenSurface,NULL);
-                SDL_UpdateWindowSurface(gWindow);
+                SDL_RenderClear(gRender);
+                SDL_RenderCopy(gRender,gTexture,NULL,NULL);
+                SDL_RenderPresent(gRender);
             }
         }
     }
