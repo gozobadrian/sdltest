@@ -958,11 +958,9 @@
 	"begin_code.h"
 	"close_code.h"
 
-1478163778 source:d:\sdl2 test\main.cpp
+1478684057 source:d:\sdl2 test\main.cpp
 	<SDL.h>
-	<SDL_image.h>
 	<stdio.h>
-	<string>
 	<conio.h>
 
 1476932294 d:\sdl2-2.0.4\i686-w64-mingw32\include\sdl2\sdl.h
